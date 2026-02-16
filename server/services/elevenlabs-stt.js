@@ -27,7 +27,7 @@ class ElevenLabsSTT extends EventEmitter {
     url.searchParams.set('language_code', 'en');
     url.searchParams.set('audio_format', 'pcm_16000');
     url.searchParams.set('commit_strategy', 'vad');
-    url.searchParams.set('vad_silence_threshold_secs', '0.5');
+    url.searchParams.set('vad_silence_threshold_secs', '0.3');
 
     logger.info(TAG, 'Connecting...');
 

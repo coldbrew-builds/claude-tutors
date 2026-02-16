@@ -45,7 +45,7 @@ class ElevenLabsTTS extends EventEmitter {
         this.ws.send(JSON.stringify({
           text: ' ',
           voice_settings: this.voiceSettings,
-          generation_config: { chunk_length_schedule: [120, 160, 250, 290] }
+          generation_config: { chunk_length_schedule: [50, 120, 160, 250] }
         }));
 
         resolve();

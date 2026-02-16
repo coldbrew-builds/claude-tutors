@@ -622,6 +622,10 @@ socket.on('agent_text_continue', (text) => {
   appendToLastAgentMessage(text);
 });
 
+socket.on('agent_text_delta', (text) => {
+  appendDeltaToLastAgentMessage(text);
+});
+
 socket.on('user_text', (text) => {
   appendMessage('You', text, 'user');
 });
@@ -684,6 +688,18 @@ function appendToLastAgentMessage(text) {
   const lastMsg = messages[messages.length - 1];
   if (lastMsg && lastMsg.dataset.rawText !== undefined) {
     lastMsg.dataset.rawText += ' ' + text;
+    lastMsg.querySelector('.message-text').innerHTML = marked.parse(lastMsg.dataset.rawText);
+    els.transcript.scrollTop = els.transcript.scrollHeight;
+  } else {
+    appendMessage('Claude', text, 'agent');
+  }
+}
+
+function appendDeltaToLastAgentMessage(text) {
+  const messages = els.transcript.querySelectorAll('.message.agent');
+  const lastMsg = messages[messages.length - 1];
+  if (lastMsg && lastMsg.dataset.rawText !== undefined) {
+    lastMsg.dataset.rawText += text;
     lastMsg.querySelector('.message-text').innerHTML = marked.parse(lastMsg.dataset.rawText);
     els.transcript.scrollTop = els.transcript.scrollHeight;
   } else {

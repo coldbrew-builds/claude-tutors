@@ -92,9 +92,12 @@ class LiveAIModule {
       logger.info(TAG, `Tool type: ${this.toolType}`);
     }
 
-    // Connect STT (idempotent — reconnects if already closed)
+    // Connect STT and TTS eagerly so they're ready when needed
     if (!this.stt.connected) {
       this.stt.connect();
+    }
+    if (this.tts && !this.tts.connected) {
+      this.tts.connect().catch(err => logger.error(TAG, 'TTS pre-connect failed:', err.message));
     }
 
     if (!isRestart) {
@@ -187,6 +190,7 @@ class LiveAIModule {
       // Reset sentence buffer
       this.sentenceBuffer = '';
       let fullText = '';
+      let firstChunkEmitted = false;
 
       const response = await this.claude.getStreamingResponse(
         systemPrompt,
@@ -197,6 +201,14 @@ class LiveAIModule {
           if (this.interrupted) return;
           fullText += chunk;
           this.handleTextChunkForTTS(chunk);
+
+          // Stream text to UI as it arrives
+          if (!firstChunkEmitted) {
+            this.socket.emit(isContinuation ? 'agent_text_continue' : 'agent_text', chunk);
+            firstChunkEmitted = true;
+          } else {
+            this.socket.emit('agent_text_delta', chunk);
+          }
         }
       );
 
@@ -213,11 +225,6 @@ class LiveAIModule {
       }
       await this.tts.flush();
       await this.tts.closeStream();
-
-      // Add assistant message to conversation
-      if (fullText) {
-        this.socket.emit(isContinuation ? 'agent_text_continue' : 'agent_text', fullText);
-      }
       this.currentConversation.push({
         role: 'assistant',
         content: response.content
@@ -281,12 +288,13 @@ class LiveAIModule {
 
     this.sentenceBuffer += chunk;
 
-    const sentenceEnd = /[.!?]\s/;
+    // Split on sentence ends and clause boundaries (commas, semicolons, colons, em-dashes)
+    const boundary = /[.!?]\s|[,;:]\s|—\s?/;
     let match;
-    while ((match = sentenceEnd.exec(this.sentenceBuffer))) {
+    while ((match = boundary.exec(this.sentenceBuffer))) {
       if (this.interrupted) break;
-      const sentence = this.sentenceBuffer.substring(0, match.index + match[0].length);
-      this.tts.sendTextChunk(sentence);
+      const fragment = this.sentenceBuffer.substring(0, match.index + match[0].length);
+      this.tts.sendTextChunk(fragment);
       this.sentenceBuffer = this.sentenceBuffer.substring(match.index + match[0].length);
     }
   }
