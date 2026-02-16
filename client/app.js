@@ -93,12 +93,14 @@ const state = {
 // Tool metadata for landing screen
 const toolMeta = {
   blender: {
-    icon: 'fa-cube',
+    title: 'Blender Tutor',
+    logo: 'assets/blender-icon.png',
     subtitle: 'Real-time AI-powered Blender 3D tutoring',
     description: 'Get voice-guided lessons, live screen analysis, and step-by-step tutorials for 3D modeling in Blender.'
   },
   figma: {
-    icon: 'fa-vector-square',
+    title: 'Figma Tutor',
+    logo: 'assets/figma-icon.png',
     subtitle: 'Real-time AI-powered Figma design tutoring',
     description: 'Get voice-guided lessons, live screen analysis, and step-by-step tutorials for UI/UX design in Figma.'
   }
@@ -109,6 +111,7 @@ const els = {
   homeScreen: document.getElementById('home-screen'),
   landingScreen: document.getElementById('landing-screen'),
   landingIcon: document.getElementById('landing-icon'),
+  landingTitle: document.getElementById('landing-title'),
   landingSubtitle: document.getElementById('landing-subtitle'),
   landingDescription: document.getElementById('landing-description'),
   sessionScreen: document.getElementById('session-screen'),
@@ -134,48 +137,96 @@ const els = {
   screenVideo: document.getElementById('screen-video'),
   screenCanvas: document.getElementById('screen-canvas'),
   noReferencePlaceholder: document.getElementById('no-reference-placeholder'),
-  debugPanel: document.getElementById('debug-panel'),
-  screenPreviewContainer: document.getElementById('screen-preview-container')
+  screenPreviewContainer: document.getElementById('screen-preview-container'),
+  sourcePicker: document.getElementById('source-picker'),
+  sourcePickerGrid: document.getElementById('source-picker-grid'),
+  sourcePickerCancel: document.getElementById('source-picker-cancel')
 };
 
-// ---- Draggable Preview Panel ----
+// ---- Mic & Screen Toggle Buttons ----
 
-(function initDrag() {
-  const panel = els.debugPanel;
-  const header = panel.querySelector('.panel-header');
-  let dragging = false, offsetX, offsetY;
+els.micIndicator.addEventListener('click', () => {
+  if (!state.mediaStream) return;
+  const track = state.mediaStream.getAudioTracks()[0];
+  if (!track) return;
+  track.enabled = !track.enabled;
+  if (track.enabled) {
+    els.micIndicator.classList.remove('inactive');
+    dbg('Mic', 'Microphone enabled');
+  } else {
+    els.micIndicator.classList.add('inactive');
+    dbg('Mic', 'Microphone muted');
+  }
+});
 
-  header.addEventListener('mousedown', (e) => {
-    dragging = true;
-    offsetX = e.clientX - panel.offsetLeft;
-    offsetY = e.clientY - panel.offsetTop;
-    // Switch from bottom/right positioning to top/left for dragging
-    panel.style.top = panel.offsetTop + 'px';
-    panel.style.left = panel.offsetLeft + 'px';
-    panel.style.bottom = 'auto';
-    panel.style.right = 'auto';
-  });
+els.screenIndicator.addEventListener('click', async () => {
+  if (state.displayStream) {
+    // Stop screen sharing
+    state.displayStream.getTracks().forEach(t => t.stop());
+    state.displayStream = null;
+    els.screenVideo.srcObject = null;
+    els.screenIndicator.classList.add('inactive');
+    els.screenPreviewContainer.classList.add('hidden');
+    stopFrameCapture();
+    dbg('Screen', 'Screen sharing stopped by user');
+  } else {
+    // Start screen sharing
+    try {
+      state.displayStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: 5 },
+        audio: false
+      });
+      els.screenIndicator.classList.remove('inactive');
+      els.screenPreviewContainer.classList.remove('hidden');
+      els.screenShareBanner.classList.add('hidden');
+      els.screenVideo.srcObject = state.displayStream;
+      els.screenVideo.muted = true;
+      await els.screenVideo.play();
 
-  document.addEventListener('mousemove', (e) => {
-    if (!dragging) return;
-    e.preventDefault();
-    const x = Math.max(0, Math.min(e.clientX - offsetX, window.innerWidth - panel.offsetWidth));
-    const y = Math.max(0, Math.min(e.clientY - offsetY, window.innerHeight - panel.offsetHeight));
-    panel.style.left = x + 'px';
-    panel.style.top = y + 'px';
-  });
+      const track = state.displayStream.getVideoTracks()[0];
+      track.addEventListener('ended', () => {
+        dbg('Screen', 'Display track ended');
+        state.displayStream = null;
+        els.screenVideo.srcObject = null;
+        els.screenIndicator.classList.add('inactive');
+        els.screenPreviewContainer.classList.add('hidden');
+        stopFrameCapture();
+      });
 
-  document.addEventListener('mouseup', () => { dragging = false; });
-})();
+      setupScreenCapture();
+      dbg('Screen', 'Screen sharing started by user');
+    } catch (e) {
+      dbg('Screen', 'Screen share declined:', e.message);
+    }
+  }
+});
 
 // ---- Back Navigation ----
 
 document.getElementById('back-to-home').addEventListener('click', () => {
   els.landingScreen.classList.add('hidden');
   els.homeScreen.classList.remove('hidden');
+  document.title = 'Claude Tutors';
 });
 
 document.getElementById('back-to-landing').addEventListener('click', () => {
+  // Tell server to tear down the session
+  socket.emit('stop_session');
+
+  // Stop any audio currently playing and clear the queue
+  state.audioQueue = [];
+  if (state.currentAudioSource) {
+    try { state.currentAudioSource.stop(); } catch (e) { /* already stopped */ }
+    state.currentAudioSource = null;
+  }
+  state.isPlayingAudio = false;
+
+  // Close playback audio context
+  if (state.playbackContext) {
+    state.playbackContext.close();
+    state.playbackContext = null;
+  }
+
   // Stop active session resources
   if (state.displayStream) {
     state.displayStream.getTracks().forEach(t => t.stop());
@@ -189,15 +240,32 @@ document.getElementById('back-to-landing').addEventListener('click', () => {
     state.audioContext.close();
     state.audioContext = null;
   }
+  state.analyser = null;
   stopFrameCapture();
+
+  // Reset session state
   state.isSessionActive = false;
+  state.tutorial = null;
+  state.currentStepIndex = 0;
   if (window.electronBridge) window.electronBridge.setSessionActive(false);
 
+  // Reset UI
   els.sessionScreen.classList.add('hidden');
   els.landingScreen.classList.remove('hidden');
   els.tutorialPanel.classList.add('hidden');
   els.screenShareBanner.classList.add('hidden');
   els.screenPreviewContainer.classList.add('hidden');
+  els.screenVideo.srcObject = null;
+  els.transcript.innerHTML = '';
+  els.stepList.innerHTML = '';
+  els.stepInstructions.classList.add('hidden');
+  els.stepImageContainer.classList.add('hidden');
+  els.referenceImageContainer.classList.add('hidden');
+  els.noReferencePlaceholder.classList.remove('hidden');
+  els.tutorialLoader.classList.add('hidden');
+  els.hotkeyDisplay.classList.add('hidden');
+  els.micIndicator.classList.remove('inactive');
+  els.screenIndicator.classList.add('inactive');
 });
 
 // ---- Tool Selection ----
@@ -209,9 +277,11 @@ document.querySelectorAll('.tool-tile[data-tool]').forEach(tile => {
 
     const meta = toolMeta[tool];
     if (meta) {
-      els.landingIcon.className = `fas ${meta.icon}`;
+      els.landingIcon.src = meta.logo;
+      els.landingTitle.textContent = meta.title;
       els.landingSubtitle.textContent = meta.subtitle;
       els.landingDescription.textContent = meta.description;
+      document.title = meta.title;
     }
 
     els.homeScreen.classList.add('hidden');
@@ -467,6 +537,7 @@ function stopFrameCapture() {
 // ---- Audio Playback (Server → Speaker) ----
 
 socket.on('agent_audio', (base64) => {
+  if (!state.isSessionActive) return;
   state.audioQueue.push(base64);
   if (!state.isPlayingAudio) {
     playNextAudio();
@@ -760,4 +831,31 @@ function showHotkey(keyCombo, description) {
       els.hotkeyDisplay.classList.add('hidden');
     }, 500);
   }, 5000);
+}
+
+// ---- Electron Screen Source Picker ----
+
+if (window.electronBridge && window.electronBridge.onSelectDisplaySource) {
+  els.sourcePickerCancel.addEventListener('click', () => {
+    els.sourcePicker.classList.add('hidden');
+    window.electronBridge.selectDisplaySource(null);
+  });
+
+  window.electronBridge.onSelectDisplaySource((sources) => {
+    els.sourcePickerGrid.innerHTML = '';
+    sources.forEach((source) => {
+      const item = document.createElement('div');
+      item.className = 'source-picker-item';
+      item.innerHTML = `
+        <img src="${source.thumbnail}" alt="${escapeHtml(source.name)}" />
+        <span class="source-name">${escapeHtml(source.name)}</span>
+      `;
+      item.addEventListener('click', () => {
+        els.sourcePicker.classList.add('hidden');
+        window.electronBridge.selectDisplaySource(source.id);
+      });
+      els.sourcePickerGrid.appendChild(item);
+    });
+    els.sourcePicker.classList.remove('hidden');
+  });
 }

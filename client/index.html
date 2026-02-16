@@ -15,12 +15,12 @@
       <p class="subtitle">Choose which software you would like to practice.</p>
       <div class="tool-grid">
         <div class="tool-tile" data-tool="blender">
-          <i class="fas fa-cube"></i>
+          <img src="assets/blender-icon.png" alt="Blender" class="tool-icon">
           <span class="tool-name">Blender 3D</span>
           <span class="tool-desc">3D modeling & sculpting</span>
         </div>
         <div class="tool-tile" data-tool="figma">
-          <i class="fas fa-vector-square"></i>
+          <img src="assets/figma-icon.png" alt="Figma" class="tool-icon">
           <span class="tool-name">Figma</span>
           <span class="tool-desc">UI/UX design</span>
         </div>
@@ -43,9 +43,9 @@
     <button id="back-to-home" class="btn-back"><i class="fas fa-arrow-left"></i> Back</button>
     <div class="landing-content">
       <div class="logo">
-        <i id="landing-icon" class="fas fa-cube"></i>
+        <img id="landing-icon" src="assets/blender-icon.png" alt="Tool logo" class="landing-logo">
       </div>
-      <h1>Claude Tutors</h1>
+      <h1 id="landing-title">Blender Tutor</h1>
       <p class="subtitle" id="landing-subtitle">Real-time AI-powered Blender 3D tutoring</p>
       <p class="description" id="landing-description">Get voice-guided lessons, live screen analysis, and step-by-step tutorials for 3D modeling in Blender.</p>
       <button id="start-btn" class="btn-primary">
@@ -64,15 +64,15 @@
         <span class="brand">Claude Tutors</span>
       </div>
       <div class="top-bar-center">
-        <div id="mic-indicator" class="indicator">
+        <button id="mic-indicator" class="indicator-btn" title="Toggle microphone">
           <canvas id="mic-visualizer" width="32" height="14"></canvas>
           <span class="dot"></span>
           <span class="label">Mic</span>
-        </div>
-        <div id="screen-indicator" class="indicator inactive">
+        </button>
+        <button id="screen-indicator" class="indicator-btn inactive" title="Toggle screen sharing">
           <span class="dot"></span>
           <span class="label">Screen</span>
-        </div>
+        </button>
       </div>
       <div class="top-bar-right">
         <span id="connection-status" class="status-badge">
@@ -93,11 +93,29 @@
 
     <!-- Main Content -->
     <div class="main-content">
-      <!-- Tutorial Panel (left) -->
+      <!-- Transcript Panel (left) -->
+      <div id="transcript-panel" class="panel">
+        <div id="transcript" class="transcript-body"></div>
+      </div>
+
+      <!-- Tutorial Panel (right) -->
       <div id="tutorial-panel" class="panel hidden">
         <div class="panel-header">
           <i class="fas fa-book-open"></i>
           <span id="tutorial-title">Tutorial</span>
+        </div>
+
+        <!-- Preview (reference image + hotkey) -->
+        <div id="reference-image-container" class="hidden">
+          <img id="reference-image" alt="Reference" />
+        </div>
+        <div id="no-reference-placeholder">
+          <i class="fas fa-cube"></i>
+          <span>No reference yet</span>
+        </div>
+        <div id="hotkey-display" class="hidden">
+          <div class="hotkey-keys"></div>
+          <div class="hotkey-desc"></div>
         </div>
 
         <div id="step-list"></div>
@@ -111,30 +129,6 @@
           <div id="step-instructions-text"></div>
         </div>
       </div>
-
-      <!-- Transcript Panel (center) -->
-      <div id="transcript-panel" class="panel">
-        <div id="transcript" class="transcript-body"></div>
-      </div>
-    </div>
-
-    <!-- Floating Preview Panel (draggable) -->
-    <div id="debug-panel">
-      <div class="panel-header">
-        <i class="fas fa-eye"></i>
-        <span>Preview</span>
-      </div>
-      <div id="reference-image-container" class="hidden">
-        <img id="reference-image" alt="Reference" />
-      </div>
-      <div id="no-reference-placeholder">
-        <i class="fas fa-cube"></i>
-        <span>No reference yet</span>
-      </div>
-      <div id="hotkey-display" class="hidden">
-        <div class="hotkey-keys"></div>
-        <div class="hotkey-desc"></div>
-      </div>
     </div>
 
     <!-- Tutorial Loader Overlay -->
@@ -144,6 +138,17 @@
         <p>Generating your tutorial...</p>
         <p class="loader-sub" id="loader-label"></p>
       </div>
+    </div>
+  </div>
+
+  <!-- Screen Source Picker (Electron only) -->
+  <div id="source-picker" class="hidden">
+    <div class="source-picker-dialog">
+      <div class="source-picker-header">
+        <span>Choose what to share</span>
+        <button id="source-picker-cancel" class="btn-back"><i class="fas fa-times"></i></button>
+      </div>
+      <div id="source-picker-grid" class="source-picker-grid"></div>
     </div>
   </div>
 

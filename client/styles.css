@@ -137,6 +137,13 @@ body {
   color: var(--accent);
 }
 
+.tool-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
 .tool-name {
   font-size: 16px;
   font-weight: 600;
@@ -183,9 +190,14 @@ body {
 }
 
 .logo {
-  font-size: 64px;
-  color: var(--accent);
   margin-bottom: 24px;
+}
+
+.landing-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 12px;
 }
 
 .landing-content h1 {
@@ -276,13 +288,33 @@ body {
   gap: 16px;
 }
 
-.indicator {
+.indicator-btn {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 12px;
   color: var(--text-secondary);
   position: relative;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  font-family: inherit;
+}
+
+.indicator-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border);
+}
+
+.indicator-btn.inactive {
+  opacity: 0.6;
+}
+
+.indicator-btn.inactive:hover {
+  opacity: 0.85;
 }
 
 #mic-visualizer {
@@ -291,7 +323,7 @@ body {
   border-radius: 2px;
 }
 
-.indicator .dot {
+.indicator-btn .dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -299,7 +331,7 @@ body {
   animation: pulse 2s infinite;
 }
 
-.indicator.inactive .dot {
+.indicator-btn.inactive .dot {
   background: var(--text-muted);
   animation: none;
 }
@@ -366,11 +398,30 @@ body {
   color: var(--accent);
 }
 
-/* Tutorial Panel */
+/* Tutorial Panel — fixed to right edge */
 #tutorial-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
   width: 380px;
-  flex-shrink: 0;
+  height: calc(100vh - 60px - 12px);
   overflow-y: auto;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.2);
+  z-index: 40;
+  margin: 18px;
+  margin-top: 60px;
+  border-radius: 12px;
+}
+
+#tutorial-panel {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+#tutorial-panel:hover {
+  scrollbar-color: var(--bg-tertiary) transparent;
 }
 
 /* Step List */
@@ -468,45 +519,16 @@ body {
 /* Transcript Panel */
 #transcript-panel {
   flex: 1;
-  max-width: 640px;
+  max-width: 600px;
   border-right: none;
 }
 
-/* Debug / Preview Panel — floating, draggable */
-#debug-panel {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 260px;
-  min-width: 180px;
-  min-height: 120px;
-  z-index: 50;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  resize: both;
+/* Preview section inside tutorial panel */
+#tutorial-panel #reference-image-container {
+  padding: 8px 12px;
 }
 
-#debug-panel .panel-header {
-  cursor: grab;
-  user-select: none;
-  border-radius: 10px 10px 0 0;
-}
-
-#debug-panel .panel-header:active {
-  cursor: grabbing;
-}
-
-#debug-panel #reference-image-container {
-  padding: 8px;
-  position: relative;
-}
-
-#debug-panel #reference-image {
+#tutorial-panel #reference-image {
   width: 100%;
   border-radius: 6px;
   border: 1px solid var(--border);
@@ -553,6 +575,12 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.transcript-body:hover {
+  scrollbar-color: var(--bg-tertiary) transparent;
 }
 
 .message {
@@ -724,6 +752,79 @@ body {
   margin-bottom: 0;
 }
 
+/* Screen Source Picker */
+#source-picker {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+}
+
+.source-picker-dialog {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 640px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.source-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.source-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.source-picker-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--bg-primary);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.source-picker-item:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 12px var(--accent-glow);
+}
+
+.source-picker-item img {
+  width: 100%;
+  border-radius: 4px;
+  background: #000;
+}
+
+.source-picker-item .source-name {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .main-content {
@@ -731,11 +832,13 @@ body {
   }
 
   #tutorial-panel {
+    position: static;
     width: 100%;
+    height: auto;
     max-height: 40vh;
-  }
-
-  #debug-panel {
-    width: 200px;
+    border-radius: 12px 12px 0 0;
+    margin: 12px 0;
+    border-left: none;
+    border-top: 1px solid var(--border);
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "claude-tutors",
   "version": "1.0.0",
-  "productName": "Claude",
+  "productName": "Claude (Proto)",
   "description": "Real-time Blender 3D tutor powered by Claude, ElevenLabs, and Gemini",
   "main": "server/index.js",
   "scripts": {
@@ -26,7 +26,7 @@
   },
   "build": {
     "appId": "com.claude.tutors",
-    "productName": "Claude",
+    "productName": "Claude (Proto)",
     "mac": {
       "category": "public.app-category.education",
       "target": "dmg"

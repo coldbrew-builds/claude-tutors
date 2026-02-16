@@ -6,5 +6,11 @@ contextBridge.exposeInMainWorld('electronBridge', {
   },
   setSessionActive(active) {
     ipcRenderer.send('session-active', active);
+  },
+  onSelectDisplaySource(callback) {
+    ipcRenderer.on('select-display-source', (_event, sources) => callback(sources));
+  },
+  selectDisplaySource(sourceId) {
+    ipcRenderer.send('display-source-selected', sourceId);
   }
 });

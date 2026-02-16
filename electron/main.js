@@ -1,9 +1,10 @@
-const { app, BrowserWindow, ipcMain, screen, desktopCapturer, session } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, desktopCapturer, session, nativeImage } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const http = require('http');
 
 const PROJECT_ROOT = path.join(__dirname, '..');
+const APP_ICON = path.join(__dirname, 'icon.png');
 const SERVER_URL = 'http://localhost:3000';
 
 let mainWindow = null;
@@ -55,7 +56,8 @@ function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    title: 'Claude Tutors',
+    title: 'Claude (Proto)',
+    icon: APP_ICON,
     webPreferences: {
       preload: path.join(__dirname, 'preload-main.js'),
       contextIsolation: true,
@@ -135,7 +137,13 @@ ipcMain.on('set-ignore-mouse-events', (_event, ignore, opts) => {
 
 // --- App lifecycle ---
 
+app.setName('Claude (Proto)');
+
 app.whenReady().then(async () => {
+  if (process.platform === 'darwin') {
+    app.dock.setIcon(nativeImage.createFromPath(APP_ICON));
+  }
+
   startServer();
 
   try {
@@ -146,15 +154,36 @@ app.whenReady().then(async () => {
     return;
   }
 
-  // Handle screen sharing — Electron doesn't show the native picker for getDisplayMedia,
-  // so we use desktopCapturer to get sources and grant the first screen automatically.
+  // Handle screen sharing — show a picker with individual windows only (no full screens).
   session.defaultSession.setDisplayMediaRequestHandler(async (_request, callback) => {
-    const sources = await desktopCapturer.getSources({ types: ['screen'] });
-    if (sources.length > 0) {
-      callback({ video: sources[0] });
-    } else {
-      callback({});
+    const sources = await desktopCapturer.getSources({
+      types: ['window'],
+      thumbnailSize: { width: 320, height: 180 }
+    });
+
+    if (sources.length === 0) {
+      callback(null);
+      return;
     }
+
+    // Send sources to renderer for picking (thumbnails as data URLs)
+    const serialized = sources.map(s => ({
+      id: s.id,
+      name: s.name,
+      thumbnail: s.thumbnail.toDataURL()
+    }));
+
+    mainWindow.webContents.send('select-display-source', serialized);
+
+    // Wait for user selection
+    ipcMain.once('display-source-selected', (_event, sourceId) => {
+      if (!sourceId) {
+        callback(null);
+        return;
+      }
+      const source = sources.find(s => s.id === sourceId);
+      callback(source ? { video: source } : null);
+    });
   });
 
   createMainWindow();

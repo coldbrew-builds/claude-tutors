@@ -31,11 +31,19 @@ app.use('/output', express.static(path.join(__dirname, '..', 'output')));
 io.on('connection', (socket) => {
   logger.info('Server', `Client connected: ${socket.id} (transport=${socket.conn.transport.name})`);
 
-  const module = new LiveAIModule();
+  let module = new LiveAIModule();
   module.initialize(socket);
 
   socket.conn.on('upgrade', (transport) => {
     logger.info('Server', `Transport upgraded: ${transport.name} (${socket.id})`);
+  });
+
+  socket.on('stop_session', () => {
+    logger.info('Server', `Client stopped session: ${socket.id}`);
+    module.destroy();
+    // Create a fresh module so the same socket can start a new session
+    module = new LiveAIModule();
+    module.initialize(socket);
   });
 
   socket.on('disconnect', (reason) => {

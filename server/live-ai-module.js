@@ -37,6 +37,7 @@ class LiveAIModule {
     this.isProcessing = false;
     this.interrupted = false;
     this.hasPendingUserMessage = false;
+    this.destroyed = false;
 
     // TTS sentence buffer
     this.sentenceBuffer = '';
@@ -616,6 +617,8 @@ class LiveAIModule {
   }
 
   destroy() {
+    if (this.destroyed) return;
+    this.destroyed = true;
     logger.info(TAG, 'Destroying module');
 
     if (this.recurringCheckInterval) {
@@ -623,9 +626,17 @@ class LiveAIModule {
       this.recurringCheckInterval = null;
     }
 
-    this.stt.disconnect();
+    if (this.stt) this.stt.disconnect();
     if (this.tts) this.tts.disconnect();
 
+    this.currentConversation = [];
+    this.currentTutorial = null;
+    this.currentStepIndex = 0;
+    this.latestFrame = null;
+    this.sentenceBuffer = '';
+    this.isProcessing = false;
+    this.isAgentCurrentlySpeaking = false;
+    this.hasPendingUserMessage = false;
     this.socket = null;
   }
 }
