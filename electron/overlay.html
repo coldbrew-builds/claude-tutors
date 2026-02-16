@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: rgba(28, 25, 23, 0.85);
+      color: #F5F0EB;
+      border-radius: 12px;
+      overflow: hidden;
+      -webkit-app-region: no-drag;
+    }
+
+    .overlay-container {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .overlay-header {
+      font-size: 11px;
+      font-weight: 600;
+      color: #A8A29E;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Reference image */
+    .ref-image-container {
+      display: none;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #44403C;
+    }
+
+    .ref-image-container img {
+      width: 100%;
+      display: block;
+    }
+
+    .placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 24px;
+      color: #78716C;
+      font-size: 12px;
+      border: 1px dashed #44403C;
+      border-radius: 8px;
+    }
+
+    .placeholder .icon {
+      font-size: 24px;
+    }
+
+    /* Hotkey display */
+    .hotkey-display {
+      display: none;
+      background: #1C1917;
+      border: 1px solid #44403C;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .hotkey-keys {
+      font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .key-cap {
+      display: inline-block;
+      background: #44403C;
+      border: 1px solid #57534E;
+      border-radius: 6px;
+      padding: 2px 8px;
+      min-width: 28px;
+      text-align: center;
+    }
+
+    .key-sep {
+      margin: 0 4px;
+      color: #78716C;
+      font-weight: 400;
+      font-size: 13px;
+    }
+
+    .hotkey-desc {
+      font-size: 12px;
+      color: #A8A29E;
+    }
+
+    /* Step indicator */
+    .step-indicator {
+      display: none;
+      font-size: 12px;
+      color: #A8A29E;
+      background: #1C1917;
+      border: 1px solid #44403C;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+
+    .step-indicator .step-label {
+      color: #da7756;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay-container">
+    <div class="overlay-header">Claude Tutors</div>
+
+    <div class="ref-image-container" id="ref-image-container">
+      <img id="ref-image" alt="Reference" />
+    </div>
+
+    <div class="placeholder" id="placeholder">
+      <span class="icon">&#9634;</span>
+      <span>No reference yet</span>
+    </div>
+
+    <div class="hotkey-display" id="hotkey-display">
+      <div class="hotkey-keys" id="hotkey-keys"></div>
+      <div class="hotkey-desc" id="hotkey-desc"></div>
+    </div>
+
+    <div class="step-indicator" id="step-indicator">
+      Step <span class="step-label" id="step-current">1</span> of <span id="step-total">1</span>
+    </div>
+  </div>
+
+  <script>
+    const refContainer = document.getElementById('ref-image-container');
+    const refImage = document.getElementById('ref-image');
+    const placeholder = document.getElementById('placeholder');
+    const hotkeyDisplay = document.getElementById('hotkey-display');
+    const hotkeyKeys = document.getElementById('hotkey-keys');
+    const hotkeyDesc = document.getElementById('hotkey-desc');
+    const stepIndicator = document.getElementById('step-indicator');
+    const stepCurrent = document.getElementById('step-current');
+    const stepTotal = document.getElementById('step-total');
+
+    let hotkeyTimeout = null;
+
+    // Click-through management
+    document.body.addEventListener('mouseenter', () => {
+      window.electron.setIgnoreMouseEvents(false);
+    });
+    document.body.addEventListener('mouseleave', () => {
+      window.electron.setIgnoreMouseEvents(true, { forward: true });
+    });
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    window.electron.onOverlayEvent((eventName, data) => {
+      switch (eventName) {
+        case 'tutorial_ready': {
+          if (data.referenceImagePath) {
+            refImage.src = 'http://localhost:3000' + data.referenceImagePath;
+            refContainer.style.display = 'block';
+            placeholder.style.display = 'none';
+          }
+          if (data.totalSteps) {
+            stepCurrent.textContent = '1';
+            stepTotal.textContent = data.totalSteps;
+            stepIndicator.style.display = 'block';
+          }
+          break;
+        }
+
+        case 'step_update': {
+          stepCurrent.textContent = data.currentStep;
+          if (data.totalSteps) stepTotal.textContent = data.totalSteps;
+          stepIndicator.style.display = 'block';
+          break;
+        }
+
+        case 'hotkey_display': {
+          const keys = data.keyCombo.split(/\s*\+\s*|\s+then\s+/i);
+          const separators = [];
+          const sepRegex = /(\+| then )/gi;
+          let match;
+          while ((match = sepRegex.exec(data.keyCombo)) !== null) {
+            separators.push(match[1].trim() === 'then' ? 'then' : '+');
+          }
+
+          let html = '';
+          keys.forEach((key, i) => {
+            html += '<span class="key-cap">' + escapeHtml(key.trim()) + '</span>';
+            if (i < keys.length - 1) {
+              html += '<span class="key-sep">' + (separators[i] || '+') + '</span>';
+            }
+          });
+
+          hotkeyKeys.innerHTML = html;
+          hotkeyDesc.textContent = data.description;
+          hotkeyDisplay.style.display = 'block';
+          hotkeyDisplay.style.opacity = '1';
+
+          if (hotkeyTimeout) clearTimeout(hotkeyTimeout);
+          hotkeyTimeout = setTimeout(() => {
+            hotkeyDisplay.style.opacity = '0';
+            setTimeout(() => { hotkeyDisplay.style.display = 'none'; }, 500);
+          }, 8000);
+          break;
+        }
+      }
+    });
+  </script>
+</body>
+</html>

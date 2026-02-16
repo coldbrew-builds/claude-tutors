@@ -168,6 +168,38 @@ const els = {
   document.addEventListener('mouseup', () => { dragging = false; });
 })();
 
+// ---- Back Navigation ----
+
+document.getElementById('back-to-home').addEventListener('click', () => {
+  els.landingScreen.classList.add('hidden');
+  els.homeScreen.classList.remove('hidden');
+});
+
+document.getElementById('back-to-landing').addEventListener('click', () => {
+  // Stop active session resources
+  if (state.displayStream) {
+    state.displayStream.getTracks().forEach(t => t.stop());
+    state.displayStream = null;
+  }
+  if (state.mediaStream) {
+    state.mediaStream.getTracks().forEach(t => t.stop());
+    state.mediaStream = null;
+  }
+  if (state.audioContext) {
+    state.audioContext.close();
+    state.audioContext = null;
+  }
+  stopFrameCapture();
+  state.isSessionActive = false;
+  if (window.electronBridge) window.electronBridge.setSessionActive(false);
+
+  els.sessionScreen.classList.add('hidden');
+  els.landingScreen.classList.remove('hidden');
+  els.tutorialPanel.classList.add('hidden');
+  els.screenShareBanner.classList.add('hidden');
+  els.screenPreviewContainer.classList.add('hidden');
+});
+
 // ---- Tool Selection ----
 
 document.querySelectorAll('.tool-tile[data-tool]').forEach(tile => {
@@ -257,6 +289,7 @@ async function startSession() {
     // Start session on server
     socket.emit('start_session', { toolType: state.selectedTool || 'blender' });
     state.isSessionActive = true;
+    if (window.electronBridge) window.electronBridge.setSessionActive(true);
     dbg('Session', `start_session emitted (toolType=${state.selectedTool})`);
 
     if (state.displayStream) {
@@ -532,6 +565,12 @@ socket.on('tutorial_ready', (tutorial) => {
   state.tutorial = tutorial;
   state.currentStepIndex = 0;
   renderTutorial(tutorial);
+  if (window.electronBridge) {
+    window.electronBridge.forwardToOverlay('tutorial_ready', {
+      referenceImagePath: tutorial.referenceImagePath || null,
+      totalSteps: tutorial.steps ? tutorial.steps.length : 0
+    });
+  }
 });
 
 socket.on('tutorial_error', ({ error }) => {
@@ -542,10 +581,16 @@ socket.on('tutorial_error', ({ error }) => {
 socket.on('step_update', ({ previousStep, currentStep, totalSteps }) => {
   state.currentStepIndex = currentStep - 1;
   updateStepHighlight();
+  if (window.electronBridge) {
+    window.electronBridge.forwardToOverlay('step_update', { currentStep, totalSteps });
+  }
 });
 
 socket.on('hotkey_display', ({ keyCombo, description }) => {
   showHotkey(keyCombo, description);
+  if (window.electronBridge) {
+    window.electronBridge.forwardToOverlay('hotkey_display', { keyCombo, description });
+  }
 });
 
 // ---- UI Render Functions ----

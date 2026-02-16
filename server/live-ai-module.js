@@ -2,7 +2,7 @@ const path = require('path');
 const ClaudeService = require('./services/claude-service');
 const ElevenLabsSTT = require('./services/elevenlabs-stt');
 const ElevenLabsTTS = require('./services/elevenlabs-tts');
-const LessonCreatorAgent = require('./agents/lesson-creator-agent');
+const LessonCreatorAgent = require('./agents/blender3d-lesson-creator-agent');
 const FigmaLessonCreatorAgent = require('./agents/figma-lesson-creator-agent');
 const logger = require('./utils/logger');
 

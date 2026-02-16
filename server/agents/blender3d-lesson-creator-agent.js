@@ -9,7 +9,7 @@ const TAG = 'LessonCreator';
 
 class LessonCreatorAgent {
   constructor() {
-    this.config = require('./lesson-creator.json');
+    this.config = require('./blender3d-lesson-creator.json');
     const imgConfig = this.config.imageGeneration || {};
 
     this.claude = new ClaudeService(process.env.ANTHROPIC_API_KEY);

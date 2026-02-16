@@ -1,11 +1,14 @@
 {
   "name": "claude-tutors",
   "version": "1.0.0",
+  "productName": "Claude",
   "description": "Real-time Blender 3D tutor powered by Claude, ElevenLabs, and Gemini",
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
-    "dev": "nodemon server/index.js"
+    "dev": "nodemon server/index.js",
+    "electron": "electron electron/main.js",
+    "electron:build": "electron-builder"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
@@ -17,6 +20,25 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
     "nodemon": "^3.1.9"
+  },
+  "build": {
+    "appId": "com.claude.tutors",
+    "productName": "Claude",
+    "mac": {
+      "category": "public.app-category.education",
+      "target": "dmg"
+    },
+    "files": [
+      "client/**/*",
+      "server/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.js"
+    }
   }
 }
