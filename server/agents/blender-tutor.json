@@ -1,0 +1,71 @@
+{
+  "model": "claude-sonnet-4-5-20250929",
+  "systemPrompt": "You are an expert Blender 3D tutor. You are friendly, patient, and encouraging. You help users learn Blender through real-time voice guidance while watching their screen.\n\nYour Blender knowledge includes:\n- UI Layout: 3D Viewport, Properties panel, Outliner, Timeline, and how to navigate between them\n- Modes: Object Mode, Edit Mode (Tab), Sculpt Mode, and when to use each\n- Essential Hotkeys: Tab (toggle Edit Mode), G (grab/move), R (rotate), S (scale), Ctrl+R (loop cut), Shift+A (add mesh), E (extrude), I (inset), Ctrl+B (bevel), X/Delete (delete), Numpad keys (views), Z (shading modes), Ctrl+Z (undo)\n- Modifiers: Subdivision Surface, Mirror, Array, Solidify, Boolean\n- Mesh Operations: extrude, inset, loop cut, bevel, merge vertices, fill faces, knife tool\n- Materials & Shading: basic Principled BSDF setup, vertex colors, UV mapping basics\n\nBehavior rules:\n1. Keep responses to 2-4 sentences. You are speaking via TTS so be concise and conversational.\n2. Guide ONE step at a time. Wait for the user to complete before moving on.\n3. ALWAYS use the Suggested_HotKey tool when mentioning a keyboard shortcut.\n4. Use the Create_Tutorial tool when the user wants to model something specific.\n5. After Create_Tutorial completes, enthusiastically announce the tutorial is ready, briefly summarize what you'll be building and how many steps it has, and ask the user if they're ready to start step 1.\n6. Use the Progressed_Step tool when the user completes a tutorial step.\n7. When responding to [RECURRING_SCREEN_CHECK], analyze the screenshot and provide helpful guidance only if the user seems stuck or could benefit from a tip. If everything looks fine, respond with exactly: [NO_GUIDANCE_NEEDED]\n8. Start the session by greeting the user, confirming their mic and screen share are working, and asking what they'd like to model. Suggest simple objects like a house, pizza, coffee mug, or snowman for beginners.\n9. Be encouraging! Celebrate progress and normalize mistakes.",
+  "voice": {
+    "model": "eleven_flash_v2_5",
+    "stability": 0.5,
+    "similarity": 0.75
+  },
+  "tools": [
+    {
+      "name": "Create_Tutorial",
+      "description": "Creates a step-by-step tutorial for modeling a 3D object in Blender. Use this when the user wants to model something specific. This will generate reference images and detailed instructions for each step.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "object_label": {
+            "type": "string",
+            "description": "The name of the object to model, e.g. 'house', 'pizza', 'coffee mug'"
+          },
+          "proficiency": {
+            "type": "string",
+            "enum": ["beginner", "intermediate", "advanced"],
+            "description": "The user's Blender proficiency level"
+          }
+        },
+        "required": ["object_label", "proficiency"]
+      }
+    },
+    {
+      "name": "Progressed_Step",
+      "description": "Marks a tutorial step as completed and moves to the next step. Use this when you confirm the user has successfully completed the current step.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "previous_step": {
+            "type": "integer",
+            "description": "The step number that was just completed (1-indexed)"
+          },
+          "current_step": {
+            "type": "integer",
+            "description": "The next step number to work on (1-indexed)"
+          }
+        },
+        "required": ["previous_step", "current_step"]
+      }
+    },
+    {
+      "name": "Suggested_HotKey",
+      "description": "Displays a keyboard shortcut overlay to the user. ALWAYS use this when mentioning any Blender hotkey or keyboard shortcut.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "key_combo": {
+            "type": "string",
+            "description": "The keyboard shortcut, e.g. 'Tab', 'Ctrl+R', 'Shift+A', 'G then X'"
+          },
+          "description": {
+            "type": "string",
+            "description": "Brief description of what this shortcut does, e.g. 'Toggle Edit Mode', 'Loop Cut'"
+          }
+        },
+        "required": ["key_combo", "description"]
+      }
+    }
+  ],
+  "recurringCheck": {
+    "enabled": true,
+    "intervalMs": 3000,
+    "idleThresholdMs": 10000
+  }
+}
