@@ -93,13 +93,13 @@ const state = {
 // Tool metadata for landing screen
 const toolMeta = {
   blender: {
-    title: 'Blender Tutor',
+    title: 'Blender Coach',
     logo: 'assets/blender-icon.png',
     subtitle: 'Real-time AI-powered Blender 3D tutoring',
     description: 'Get voice-guided lessons, live screen analysis, and step-by-step tutorials for 3D modeling in Blender.'
   },
   figma: {
-    title: 'Figma Tutor',
+    title: 'Figma Coach',
     logo: 'assets/figma-icon.png',
     subtitle: 'Real-time AI-powered Figma design tutoring',
     description: 'Get voice-guided lessons, live screen analysis, and step-by-step tutorials for UI/UX design in Figma.'
@@ -206,7 +206,7 @@ els.screenIndicator.addEventListener('click', async () => {
 document.getElementById('back-to-home').addEventListener('click', () => {
   els.landingScreen.classList.add('hidden');
   els.homeScreen.classList.remove('hidden');
-  document.title = 'Claude Tutors';
+  document.title = 'Claude Coach';
 });
 
 document.getElementById('back-to-landing').addEventListener('click', () => {

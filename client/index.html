@@ -3,16 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Claude Tutors</title>
+  <title>Claude Coach</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <!-- Home Screen (tool selection) -->
   <div id="home-screen">
+    <div class="mode-switcher">
+      <button class="mode-tab disabled">Chat<span class="mode-tooltip">This is just a prototype :)</span></button>
+      <button class="mode-tab disabled">Cowork<span class="mode-tooltip">This is just a prototype :)</span></button>
+      <button class="mode-tab disabled">Code<span class="mode-tooltip">This is just a prototype :)</span></button>
+      <button class="mode-tab active">Coach</button>
+    </div>
     <div class="home-content">
-      <h1>Claude Tutors</h1>
-      <p class="subtitle">Choose which software you would like to practice.</p>
+      <h1>Claude Coach</h1>
+      <p class="subtitle">What do you want to master today?</p>
       <div class="tool-grid">
         <div class="tool-tile" data-tool="blender">
           <img src="assets/blender-icon.png" alt="Blender" class="tool-icon">
@@ -45,7 +54,7 @@
       <div class="logo">
         <img id="landing-icon" src="assets/blender-icon.png" alt="Tool logo" class="landing-logo">
       </div>
-      <h1 id="landing-title">Blender Tutor</h1>
+      <h1 id="landing-title">Blender Coach</h1>
       <p class="subtitle" id="landing-subtitle">Real-time AI-powered Blender 3D tutoring</p>
       <p class="description" id="landing-description">Get voice-guided lessons, live screen analysis, and step-by-step tutorials for 3D modeling in Blender.</p>
       <button id="start-btn" class="btn-primary">
@@ -61,7 +70,7 @@
       <div class="top-bar-left">
         <button id="back-to-landing" class="btn-back"><i class="fas fa-arrow-left"></i></button>
         <i class="fas fa-cube"></i>
-        <span class="brand">Claude Tutors</span>
+        <span class="brand">Claude Coach</span>
       </div>
       <div class="top-bar-center">
         <button id="mic-indicator" class="indicator-btn" title="Toggle microphone">
