@@ -111,14 +111,22 @@ h1 {
   transition: all 0.2s;
 }
 
+.mode-tab:hover {
+  cursor: pointer ;
+}
+
 .mode-tab.active {
   background: var(--bg-secondary);
   color: var(--text-primary);
 }
 
 .mode-tab.disabled {
-  opacity: 0.5;
+  color: var(--text-primary);
+  opacity: 0.4;
   position: relative;
+}
+.mode-tab.disabled:hover  {
+  opacity: 0.8;
 }
 
 .mode-tab.disabled:hover .mode-tooltip {
